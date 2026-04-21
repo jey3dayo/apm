@@ -154,8 +154,6 @@ class PromptIntegrator(BaseIntegrator):
         Returns:
             IntegrationResult: Results of the integration operation
         """
-        self.init_link_resolver(package_info, project_root)
-        
         # Find all prompt files in the package
         prompt_files = self.find_prompt_files(package_info.install_path)
         
@@ -166,6 +164,7 @@ class PromptIntegrator(BaseIntegrator):
                 files_skipped=0,
                 target_paths=[],
                 )
+        self.init_link_resolver(package_info, project_root)
         
         # Create .github/prompts/ if it doesn't exist
         prompts_dir = project_root / ".github" / "prompts"
@@ -216,4 +215,3 @@ class PromptIntegrator(BaseIntegrator):
             legacy_glob_dir=prompts_dir,
             legacy_glob_pattern="*-apm.prompt.md",
         )
-

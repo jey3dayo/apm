@@ -7,6 +7,7 @@ from datetime import datetime
 
 from apm_cli.integration import AgentIntegrator
 from apm_cli.models.apm_package import PackageInfo, APMPackage, ResolvedReference, GitReferenceType
+from apm_cli.integration.targets import KNOWN_TARGETS
 
 
 class TestAgentIntegrator:
@@ -96,6 +97,43 @@ class TestAgentIntegrator:
         assert len(agents) == 2
         extensions = {tuple(p.name.split('.')[-2:]) for p in agents}
         assert extensions == {('agent', 'md'), ('chatmode', 'md')}
+
+    def test_target_integration_skips_link_resolver_when_no_agent_files(self):
+        package_dir = self.project_root / "package"
+        package_dir.mkdir()
+        (self.project_root / ".claude").mkdir()
+
+        package = APMPackage(
+            name="test-package",
+            version="1.0.0",
+            package_path=package_dir,
+            source="github.com/test/test-package",
+        )
+        resolved_ref = ResolvedReference(
+            original_ref="main",
+            ref_type=GitReferenceType.BRANCH,
+            resolved_commit="abc123",
+            ref_name="main",
+        )
+        package_info = PackageInfo(
+            package=package,
+            install_path=package_dir,
+            resolved_reference=resolved_ref,
+            installed_at=datetime.now().isoformat(),
+        )
+
+        self.integrator.init_link_resolver = Mock()
+        result = self.integrator.integrate_agents_for_target(
+            KNOWN_TARGETS["claude"],
+            package_info,
+            self.project_root,
+            managed_files=set(),
+            diagnostics=Mock(),
+        )
+
+        assert result.files_integrated == 0
+        assert result.target_paths == []
+        self.integrator.init_link_resolver.assert_not_called()
     
     def test_copy_agent_verbatim(self):
         """Test copying agent file verbatim (no metadata injection)."""

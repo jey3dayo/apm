@@ -82,10 +82,10 @@ class InstructionIntegrator(BaseIntegrator):
         if not target.auto_create and not (project_root / target.root_dir).is_dir():
             return IntegrationResult(0, 0, 0, [])
 
-        self.init_link_resolver(package_info, project_root)
         instruction_files = self.find_instruction_files(package_info.install_path)
         if not instruction_files:
             return IntegrationResult(0, 0, 0, [])
+        self.init_link_resolver(package_info, project_root)
 
         deploy_dir = target_root / mapping.subdir
         deploy_dir.mkdir(parents=True, exist_ok=True)

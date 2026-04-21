@@ -10,6 +10,7 @@ from datetime import datetime
 from apm_cli.integration.instruction_integrator import InstructionIntegrator
 from apm_cli.integration.base_integrator import IntegrationResult
 from apm_cli.models.apm_package import PackageInfo, APMPackage, ResolvedReference, GitReferenceType
+from apm_cli.integration.targets import KNOWN_TARGETS
 
 
 def _make_package_info(package_dir, name="test-pkg"):
@@ -97,6 +98,24 @@ class TestInstructionIntegrator:
 
         files = self.integrator.find_instruction_files(pkg)
         assert len(files) == 3
+
+    def test_target_integration_skips_link_resolver_when_no_instruction_files(self):
+        pkg = self.project_root / "package"
+        pkg.mkdir()
+        (self.project_root / ".claude").mkdir()
+        pkg_info = self._make_package_info(pkg)
+
+        self.integrator.init_link_resolver = Mock()
+        result = self.integrator.integrate_instructions_for_target(
+            KNOWN_TARGETS["claude"],
+            pkg_info,
+            self.project_root,
+            managed_files=set(),
+            diagnostics=Mock(),
+        )
+
+        assert result == IntegrationResult(0, 0, 0, [])
+        self.integrator.init_link_resolver.assert_not_called()
 
     # ===== Copy =====
 

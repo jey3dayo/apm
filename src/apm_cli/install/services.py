@@ -37,6 +37,33 @@ list = builtins.list
 dict = builtins.dict
 
 
+def _record_deployed_paths(
+    target_paths: Any,
+    project_root: Path,
+    deployed: list[str],
+    *,
+    expand_directories: bool = False,
+) -> None:
+    """Append project-relative deployed paths, optionally expanding directories."""
+    seen = builtins.set(deployed)
+
+    for target_path in target_paths:
+        if expand_directories and target_path.is_dir():
+            candidates = sorted(
+                path for path in target_path.rglob("*")
+                if path.is_file() or path.is_symlink()
+            )
+        else:
+            candidates = [target_path]
+
+        for candidate in candidates:
+            rel_path = candidate.relative_to(project_root).as_posix()
+            if rel_path in seen:
+                continue
+            deployed.append(rel_path)
+            seen.add(rel_path)
+
+
 def integrate_package_primitives(
     package_info: Any,
     project_root: Path,
@@ -135,8 +162,7 @@ def integrate_package_primitives(
                     f"  |-- {_int_result.files_integrated} {_label} integrated -> {_deploy_dir}"
                 )
             result["links_resolved"] += _int_result.links_resolved
-            for tp in _int_result.target_paths:
-                deployed.append(tp.relative_to(project_root).as_posix())
+            _record_deployed_paths(_int_result.target_paths, project_root, deployed)
 
     skill_result = skill_integrator.integrate_package_skill(
         package_info, project_root,
@@ -156,8 +182,14 @@ def integrate_package_primitives(
     if skill_result.sub_skills_promoted > 0:
         result["sub_skills"] += skill_result.sub_skills_promoted
         _log_integration(f"  |-- {skill_result.sub_skills_promoted} skill(s) integrated -> {_skill_target_str}")
-    for tp in skill_result.target_paths:
-        deployed.append(tp.relative_to(project_root).as_posix())
+    # Skill integrators record directory roots; lockfile cleanup needs file-level
+    # entries so removed skills can be deleted safely on the next install.
+    _record_deployed_paths(
+        skill_result.target_paths,
+        project_root,
+        deployed,
+        expand_directories=True,
+    )
 
     return result
 

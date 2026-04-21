@@ -125,6 +125,30 @@ class TestTargetGatingRegression:
             target = call_args[0][0]
             assert target.root_dir != ".github"
 
+    def test_skill_directories_expand_to_file_entries_for_deployed_files(self, tmp_path):
+        """Skill target_paths may be directories, but deployed_files must stay file-based."""
+        targets = [KNOWN_TARGETS["claude"]]
+        integrators = _make_mock_integrators()
+
+        skill_dir = tmp_path / ".claude" / "skills" / "cloudflare"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("---\nname: cloudflare\n---\n", encoding="utf-8")
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "guide.md").write_text("# Guide\n", encoding="utf-8")
+
+        skill_result = _make_skill_result()
+        skill_result.skill_created = True
+        skill_result.target_paths = [skill_dir]
+        integrators["skill_integrator"].integrate_package_skill.return_value = skill_result
+
+        result, _ = _dispatch(targets, integrators=integrators, project_root=tmp_path)
+
+        assert result["deployed_files"] == [
+            ".claude/skills/cloudflare/SKILL.md",
+            ".claude/skills/cloudflare/references/guide.md",
+        ]
+
     def test_cursor_only_does_not_write_claude_or_github(self):
         """With targets=[cursor], no .claude/ or .github/ primitives fire."""
         targets = [KNOWN_TARGETS["cursor"]]

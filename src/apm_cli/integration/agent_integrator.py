@@ -115,10 +115,10 @@ class AgentIntegrator(BaseIntegrator):
         if not target.auto_create and not (project_root / target.root_dir).is_dir():
             return IntegrationResult(0, 0, 0, [])
 
-        self.init_link_resolver(package_info, project_root)
         agent_files = self.find_agent_files(package_info.install_path)
         if not agent_files:
             return IntegrationResult(0, 0, 0, [])
+        self.init_link_resolver(package_info, project_root)
 
         agents_dir = target_root / mapping.subdir
         agents_dir.mkdir(parents=True, exist_ok=True)
@@ -277,10 +277,10 @@ class AgentIntegrator(BaseIntegrator):
         from apm_cli.integration.targets import KNOWN_TARGETS
         copilot = KNOWN_TARGETS["copilot"]
 
-        self.init_link_resolver(package_info, project_root)
         agent_files = self.find_agent_files(package_info.install_path)
         if not agent_files:
             return IntegrationResult(0, 0, 0, [])
+        self.init_link_resolver(package_info, project_root)
 
         agents_dir = project_root / ".github" / "agents"
         agents_dir.mkdir(parents=True, exist_ok=True)
@@ -448,5 +448,4 @@ class AgentIntegrator(BaseIntegrator):
             KNOWN_TARGETS["opencode"], apm_package, project_root,
             managed_files=managed_files,
         )
-
 
