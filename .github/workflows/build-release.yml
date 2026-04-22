@@ -579,9 +579,9 @@ jobs:
         run: |
           TAG_NAME="${{ github.ref_name }}"
 
-          # Check if tag matches stable semver pattern (e.g., v1.2.3, v0.2.0)
-          # Stable: starts with v, followed by digits.digits.digits, then end of string
-          if [[ "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          # Stable releases allow plain X.Y.Z tags and PEP 440 post releases.
+          # Examples: v1.2.3, v0.8.12.post1
+          if [[ "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\.post[0-9]+)?$ ]]; then
             echo "is_prerelease=false" >> $GITHUB_OUTPUT
             echo "Detected stable release: $TAG_NAME"
           # Check PEP 440 prerelease patterns: v1.2.3a1, v1.2.3b1, v1.2.3rc1, etc.
